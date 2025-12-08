@@ -20,8 +20,6 @@ def exact_match_classifier(reads, ref_seq, ref_genre):
                     genre_inconnu = "Unassigned"
                 else:
                     genre_inconnu = genre
-                # on s'arrête au premier match ; à toi de discuter si c’est suffisant
-                break
 
         result[read_id] = genre_inconnu
     return result
