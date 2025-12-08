@@ -24,16 +24,11 @@ def load_tax_genus(taxofile):
 
             seq_ID , reste = line.split()
             indicateur  = reste.split(";")
-
             dico_taxo[seq_ID] = None
 
             for i in indicateur :
                 if i.startswith('g'):
                     dico_taxo[seq_ID] = i
                     break
-
     t.close()
     return dico_taxo
-
-print(load_tax_genus(taxofile))
-
