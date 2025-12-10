@@ -60,3 +60,22 @@ for reads_ID, reads_seq in reads.items() :
         print(f"Résultat de {reads_ID} et {ref_id}: {best_match(reads_seq, seq, w=4)}")
    
 
+def longest_substring_classifie(reads, ref_seq, ref_genre, w=10):
+    classification = {}
+
+    for read_id, read in reads.items():
+        best_len = 0
+        best_ref = None
+
+        for ref_id, ref in ref_seq.items():
+            L = best_match(read, ref, w)
+            if L > best_len:
+                best_len = L
+                best_ref = ref_id
+
+        if best_len >= w:
+            classification[read_id] = ref_genre.get(best_ref, "Unassigned")
+        else:
+            classification[read_id] = "Unassigned"
+
+    return classification
