@@ -1,87 +1,75 @@
 import metagenomic as meta
 
-reads = meta.load_fasta(filename='HQ_76bp_16SRNA.fa')
-ref_seq = meta.load_fasta(filename='gg_99.pds.ng.fasta')
-ref_genre = meta.load_tax_genus(taxofile='gg_99.pds.tax')
+def menu():
+    '''Menu qui permet la configuration des fichiers et le lancement des différentes fonctions.'''
+    # valeurs par défaut
+    reads = meta.load_fasta('HQ_76bp_16SRNA.fa')
+    ref_seq = meta.load_fasta('gg_99.pds.ng.fasta')
+    ref_genre = meta.load_tax_genus('gg_99.pds.tax')
+    #valeurs des dico de test | pour modifier la taille du test, changez les nombres en paramètre
+    dico_test_reads = meta.dico_test(reads, 100)
+    dico_test_ref_seq = meta.dico_test(ref_seq, 500)
+    #Taille de la fenètre pour la fonction best_match
+    w = 7
+    #1er lancement de la fonction exact_match, on récup le dico de résultat pour les autres fonctions.
+    result = meta.exact_match_classifier(reads, ref_seq, ref_genre)
 
-# print('test reads : ',test_reads)
-# print('test ref seq ',test_ref_seq)
+    while True:
+        print("\n================= Metagenomic =====================")
+        print("1. Changer les fichiers de référence")
+        print("2. Changer le fichier échantillon à comparer")
+        print("3. Lancer les fonctions (sous-menu)")
+        print("0. Quitter")
+        rep = int(input("Votre choix : "))
 
-dico_test_reads = meta.dico_test(reads, 100)
-dico_test_ref_seq = meta.dico_test(ref_seq, 500)
+        if rep == 1:
+            # fichiers de référence
+            filename = input("Chemin du fichier de séquences de référence (.fasta) : ")
+            ref_seq = meta.load_fasta(filename)
+            filename = input("Chemin du fichier de taxonomie (.tax) : ")
+            ref_genre = meta.load_tax_genus(filename)
+            # calculer exact match avec les nouvelles refs
+            result = meta.exact_match_classifier(reads, ref_seq, ref_genre)
 
+        elif rep == 2:
+            # fichier échantillon (reads)
+            filename = input("Chemin du fichier de l'échantillon (.fasta) : ")
+            reads = meta.load_fasta(filename)
+            # recalculer l'exact match avec les nouveaux reads
+            result = meta.exact_match_classifier(reads, ref_seq, ref_genre)
 
-result = meta.exact_match_classifier(reads, ref_seq, ref_genre)
-print(result)
+        elif rep == 3:
+            # sous-menu des fonctions
+            print("\n--- Lancer un fonction ---")
+            print("1. Exact match classifier")
+            print("2. Longest substring classifier avec dico test (moins long)")
+            print("3. Longest substring classifier (long)")
+            print("0. Retour")
+            choix = int(input("Votre choix : "))
 
-def best_match(reads_seq, ref_seq, w): 
-    """La fonction best_match prend en paramètre les séquences a comparer, 
-    les séquences de références et la taille des morceaux de séquences a comparer."""
-    # ref_seq : dict {ref_id: sequence}
-    # ref_genre : dict {ref_id: genre}
-    
-    #reads_seq = reads.items()
-    #reads_seq = reads.values()
-    resultat=0 #longest  match
-    L = len(reads_seq)
-    l=len(ref_seq)
-    i=0
-    for i in range(L - w + 1,):  
-        array = reads_seq[i:i + w]
-        
-        if array in ref_seq:
-            for j in range(l-w+1):
-                if ref_seq[j:j + w]==array:
-                    res_temp = w
-                    j_read = i+w
-                    j_ref= j+w
-                    while(j_read<L and j_ref<l and reads_seq[j_read] == ref_seq[j_ref] ):
-                        res_temp += 1
-                        j_read += 1
-                        j_ref += 1
+            if choix == 1:
+                result = meta.exact_match_classifier(reads, ref_seq, ref_genre)
+                print("Résultat exact_match_classifier :")
+                print(result)
 
+            elif choix == 2:
+                w = int(input("Choisissez une longueur minimale d'alignement w : "))
+                result_longest = meta.longest_substring_classifier(dico_test_reads, dico_test_ref_seq, ref_genre, w, result)
+                print("Résultat longest_substring_classifier :")
+                print(result_longest)
 
-                        if res_temp> resultat:
-                            resultat = res_temp 
-    return resultat
+            elif choix == 3:
+                w = int(input("Choisissez une longueur minimale d'alignement w : "))
+                result_longest = meta.longest_substring_classifier(reads, ref_seq, ref_genre, w, result)
+                print("Résultat longest_substring_classifier :")
+                print(result_longest)
 
-# for reads_ID, reads_seq in reads.items() :
-#     for ref_id, seq in ref_seq.items(): 
-#         print(f"Résultat de {reads_ID} et {ref_id}: {best_match(reads_seq, seq, w=7)}") #affiche chaque lignes de comparaison.
-   
+            elif choix == 0:
+                continue
 
-def longest_substring_classifier(reads, ref_seq, ref_genre, w, result):
-    """la fonction longest_substring_classifier prend comme paramètre :
-    - reads : dict {read_id: séquence à comparer}
-    - ref_seq : dict {ref_id: séquence de référence}
-    - ref_genre : dict {ref_id: genre taxonomique}
-    - w : longueur minimale du match
-    - result : dict {read_id: genre ou 'Unassigned'} (résultat de l'exact match)
-    """
-    classification = {}
+        elif rep == 0:
+            break
 
-    for read_id, genre in result.items():
-        # si déjà classé par exact_match_classifier, on recopie
-        if genre != "Unassigned":
-            classification[read_id] = genre
-            continue
+    return
 
-        read = reads[read_id]
-        best_len = 0
-        best_ref = None
-
-        for ref_id, ref in dico_test_ref_seq.items():
-            L = best_match(read, ref, w)
-            # print(f"Résultat de {read_id} et {ref_id}: {L}")
-            if L > best_len:
-                best_len = L
-                best_ref = ref_id
-
-        if best_len >= w and best_ref is not None:
-            classification[read_id] = ref_genre.get(best_ref, "Unassigned")
-        else:
-            classification[read_id] = "Unassigned"
-
-    return classification
-
-print(longest_substring_classifier(dico_test_reads, dico_test_ref_seq, ref_genre, 7, result))
+menu()
