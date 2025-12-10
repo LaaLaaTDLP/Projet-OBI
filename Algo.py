@@ -1,6 +1,5 @@
 import metagenomic as meta
 
-
 reads = meta.load_fasta(filename='HQ_76bp_16SRNA.fa')
 ref_seq = meta.load_fasta(filename='gg_99.pds.ng.fasta')
 ref_genre = meta.load_tax_genus(taxofile='gg_99.pds.tax')
@@ -24,64 +23,40 @@ def exact_match_classifier(reads, ref_seq, ref_genre):
 
 result = exact_match_classifier(reads, ref_seq, ref_genre)
 
-def best_match(result):
-    cut_reads={}
-    for read_id, status in result.items():
-        if status == "Unassigned":
-            sequence = reads[read_id]   # On récupère la séquence associée à cet id
-            cut_seq=sequence[0:len(sequence)//2]
-            cut_reads[read_id] = cut_seq
-    # return cut_reads
-    result = exact_match_classifier(cut_reads, ref_seq, ref_genre)
-    return result
+
+def best_match(reads_seq, ref_seq,w):
+    # ref_seq : dict {ref_id: sequence}
+    # ref_genre : dict {ref_id: genre}
+    
+    #reads_seq = reads.items()
+    #reads_seq = reads.values()
+    resultat=0 #longest  match
+    L = len(reads_seq)
+    l=len(ref_seq)
+    i=0
+    for i in range(L - w + 1,):  
+        array = reads_seq[i:i + w]
+     
+        if array in ref_seq:
+            for j in range(l-w+1):
+                if ref_seq[j:j + w]==array:
+                    res_temp = w
+                    j_read = i+w
+                    j_ref= j+w
+                    while(j_read<L and j_ref<l and reads_seq[j_read] == ref_seq[j_ref] ):
+                        res_temp += 1
+                        j_read += 1
+                        j_ref += 1
 
 
-cut_reads= best_match(result)
-print(cut_reads)
-
-# import metagenomic as meta
-
-
-# reads = meta.load_fasta(filename='HQ_76bp_16SRNA.fa') # reads : dict {read_id: sequence}
-# ref_seq = meta.load_fasta(filename='test.fasta') # ref_seq : dict {seq_ID : sequence}
-# ref_genre = meta.load_tax_genus(taxofile='gg_99.pds.tax') # ref_genre : {seq_ID: genre_taxo}
-
-# def classify_read(reads_seq, ref_seq, ref_genre):
-#     # ref_seq : dict {ref_id: sequence}
-#     # ref_genre : dict {ref_id: genre}
-#     L = len(reads_seq)
-#     for w in range(6, 0, -1):       # 6 -> 5 -> 4 -> 3
-
-#         for it in range(0, L - w + 1):
-#             motif = reads_seq[it:it + w]
-
-#             matches = []
-#             for ref_id, ref_s in ref_seq.items():
-#                 if motif in ref_s:
-#                     matches.append(ref_id)
-#                     print(matches)
-#             if len(matches) == 0:
-#                 continue
-#             elif len(matches) == 1:
-#                 ref_id = matches[0]
-#                 return ref_genre.get(ref_id, "Unassigned")
-#             else:
-#                 ref
-#                 # plusieurs matches : tu peux décider de marquer "Ambiguous"
-#                 # ou de continuer à glisser / réduire encore
-#                 continue
-
-#     return "Unassigned"
-
-# def exact_match_classifier(reads, ref_seq, ref_genre):
-
-#     result = {}
-#     for reads_id, reads_seq in reads.items():
-#         result[reads_id] = classify_read(reads_seq, ref_seq, ref_genre)
-#     return result
-
-# assignations = exact_match_classifier(reads, ref_seq, ref_genre)
-# print(assignations)
+                        if res_temp> resultat:
+                            resultat = res_temp 
+    return resultat
 
 
-# exact_match_classifier(reads, ref_seq, ref_genre)
+
+for reads_ID, reads_seq in reads.items() :
+    for ref_id, seq in ref_seq.items(): 
+        print(f"Résultat de {reads_ID} et {ref_id}: {best_match(reads_seq, seq, w=4)}")
+   
+
