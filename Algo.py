@@ -61,6 +61,12 @@ for reads_ID, reads_seq in reads.items() :
    
 
 def longest_substring_classifie(reads, ref_seq, ref_genre, w=10):
+     """
+    Classe chaque read selon la plus longue sous-chaîne partagée avec les séquences
+    de référence. Retourne le genre associé ou "Unassigned" si aucune correspondance
+    n'atteint la longueur w.
+    """
+    
     classification = {}
 
     for read_id, read in reads.items():
